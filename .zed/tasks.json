@@ -1,0 +1,32 @@
+[
+  {
+    "label": "CMake Configure",
+    "command": "cmake",
+    "args": ["-B", "build"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "CMake Build",
+    "command": "cmake",
+    "args": ["--build", "build"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "CMake Configure & Build",
+    "command": "cmake",
+    "args": ["-B", "build", "&&", "cmake", "--build", "build"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "Run (Unix)",
+    "command": "./build/semestralka_1",
+    "args": [],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "Run (Windows)",
+    "command": ".\\build\\Debug\\semestralka_1.exe",
+    "args": [],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  }
+]

@@ -1,0 +1,10 @@
+^C:\USERS\MRELLEN-WIN\PROGRAMMING\UPP\SEMESTRALKA_1\BUILD\CMAKEFILES\F64542FAE26A626A37EB1705C6DCD075\GENERATE.STAMP.RULE
+setlocal
+C:\Users\mrellen-win\scoop\apps\cmake\current\bin\cmake.exe -SC:/Users/mrellen-win/Programming/UPP/semestralka_1 -BC:/Users/mrellen-win/Programming/UPP/semestralka_1/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/mrellen-win/Programming/UPP/semestralka_1/build/semestralka_1.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

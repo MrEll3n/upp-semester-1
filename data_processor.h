@@ -28,4 +28,7 @@ class DataProcessor {
 
     bool parseData();
 
+    static bool parseStations(std::vector<Station>& stations, const std::string& path);
+
+    static bool parseMeasurements(std::vector<Measurement>& measurements, const std::string& path);
 };
