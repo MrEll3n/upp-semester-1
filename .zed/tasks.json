@@ -6,27 +6,51 @@
     "cwd": "$ZED_WORKTREE_ROOT"
   },
   {
-    "label": "CMake Build",
+    "label": "CMake Build (Debug)",
     "command": "cmake",
-    "args": ["--build", "build"],
+    "args": ["--build", "build", "--config", "Debug"],
     "cwd": "$ZED_WORKTREE_ROOT"
   },
   {
-    "label": "CMake Configure & Build",
+    "label": "CMake Build (Release)",
     "command": "cmake",
-    "args": ["-B", "build", "&&", "cmake", "--build", "build"],
+    "args": ["--build", "build", "--config", "Release"],
     "cwd": "$ZED_WORKTREE_ROOT"
   },
   {
-    "label": "Run (Unix)",
-    "command": "./build/semestralka_1",
-    "args": [],
+    "label": "Run Serial (Unix)",
+    "command": "./build/upp_sp1",
+    "args": ["data/stanice.csv", "data/mereni.csv", "--serial"],
     "cwd": "$ZED_WORKTREE_ROOT"
   },
   {
-    "label": "Run (Windows)",
-    "command": ".\\build\\Debug\\semestralka_1.exe",
-    "args": [],
+    "label": "Run Parallel (Unix)",
+    "command": "./build/upp_sp1",
+    "args": ["data/stanice.csv", "data/mereni.csv", "--parallel"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "Run Serial (Windows Debug)",
+    "command": ".\\build\\Debug\\upp_sp1.exe",
+    "args": ["data\\stanice.csv", "data\\mereni.csv", "--serial"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "Run Parallel (Windows Debug)",
+    "command": ".\\build\\Debug\\upp_sp1.exe",
+    "args": ["data\\stanice.csv", "data\\mereni.csv", "--parallel"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "Run Serial (Windows Release)",
+    "command": ".\\build\\Release\\upp_sp1.exe",
+    "args": ["data\\stanice.csv", "data\\mereni.csv", "--serial"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "Run Parallel (Windows Release)",
+    "command": ".\\build\\Release\\upp_sp1.exe",
+    "args": ["data\\stanice.csv", "data\\mereni.csv", "--parallel"],
     "cwd": "$ZED_WORKTREE_ROOT"
   }
 ]

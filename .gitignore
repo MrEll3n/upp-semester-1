@@ -1,2 +1,6 @@
 data/mereni.csv
 data/stanice.csv
+
+out/*
+
+build

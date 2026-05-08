@@ -1,9 +1,7 @@
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
-
-const std::string PATH_MEASUREMENT = "data/mereni.csv";
-const std::string PATH_STATIONS = "data/stanice.csv";
 
 struct Measurement {
     uint32_t station_id;
@@ -21,14 +19,29 @@ struct Station {
     float longtitude;
 };
 
-class DataProcessor {
-    public:
-        std::vector<Measurement> measurements;
-        std::vector<Station> stations;
+struct MonthlyAvg {
+    uint32_t station_id;
+    uint8_t month;
+    float avg_temp;
+};
 
-    bool parseData();
+struct Fluctuation {
+    uint32_t station_id;
+    uint8_t month;
+    uint16_t year;  // second year of the consecutive pair
+    float diff;
+};
+
+class DataProcessor {
+public:
+    std::vector<Measurement> measurements;
+    std::vector<Station> stations;
+
+    bool parseData(const std::string& stations_path, const std::string& measurements_path);
+    void filterStations();
+    std::vector<MonthlyAvg> computeMonthlyAverages() const;
+    std::vector<Fluctuation> detectFluctuations() const;
 
     static bool parseStations(std::vector<Station>& stations, const std::string& path);
-
     static bool parseMeasurements(std::vector<Measurement>& measurements, const std::string& path);
 };
