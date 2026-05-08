@@ -1,3 +1,0 @@
-C:/Users/mrellen-win/Programming/UPP/semestralka_1/build/CMakeFiles/upp_sp1.dir
-C:/Users/mrellen-win/Programming/UPP/semestralka_1/build/CMakeFiles/ALL_BUILD.dir
-C:/Users/mrellen-win/Programming/UPP/semestralka_1/build/CMakeFiles/ZERO_CHECK.dir
