@@ -166,47 +166,53 @@ void DataProcessor::filterStations() {
         measurements.end());
 }
 
+// uint64_t-encoded hash keys — bit shifting hidden inside helper functions
+static uint64_t smKey(uint32_t station_id, uint8_t month) {
+    return ((uint64_t)station_id << 8) | month;
+}
+static uint64_t smyKey(uint32_t station_id, uint8_t month, uint16_t year) {
+    return ((uint64_t)station_id << 32) | ((uint64_t)month << 16) | year;
+}
+static uint32_t smKeyStation(uint64_t key) { return uint32_t(key >> 8); }
+static uint8_t  smKeyMonth  (uint64_t key) { return uint8_t(key & 0xFF); }
+static uint32_t smyKeyStation(uint64_t key) { return uint32_t(key >> 32); }
+static uint8_t  smyKeyMonth  (uint64_t key) { return uint8_t((key >> 16) & 0xFF); }
+static uint16_t smyKeyYear   (uint64_t key) { return uint16_t(key & 0xFFFF); }
+
+using SumCount = std::pair<double, uint32_t>;
+
 // ---------------------------------------------------------------------------
 // Monthly averages (for SVG coloring)
 // ---------------------------------------------------------------------------
 
 std::vector<MonthlyAvg> DataProcessor::computeMonthlyAverages() const {
-    using Key = uint64_t;
-    using Val = std::pair<double, uint32_t>;
-
-    std::unordered_map<Key, Val> global_sums;
+    std::unordered_map<uint64_t, SumCount> global_sums;
 
     // Thread-local accumulation, then critical merge
     #pragma omp parallel
     {
-        std::unordered_map<Key, Val> local;
+        std::unordered_map<uint64_t, SumCount> local;
 
         #pragma omp for nowait schedule(static)
         for (int i = 0; i < (int)measurements.size(); i++) {
             const auto& m = measurements[i];
-            Key key = ((Key)m.station_id << 4) | (m.month - 1);
-            auto& [s, c] = local[key];
-            s += m.value;
-            c++;
+            auto& [sum, count] = local[smKey(m.station_id, m.month)];
+            sum += m.value;
+            count++;
         }
 
         #pragma omp critical
-        for (auto& [k, v] : local) {
-            auto& [gs, gc] = global_sums[k];
-            gs += v.first;
-            gc += v.second;
+        for (auto& [key, val] : local) {
+            auto& [sum, count] = global_sums[key];
+            sum   += val.first;
+            count += val.second;
         }
     }
 
     std::vector<MonthlyAvg> result;
     result.reserve(global_sums.size());
-    for (const auto& [key, val] : global_sums) {
-        result.push_back({
-            uint32_t(key >> 4),
-            uint8_t((key & 0xF) + 1),
-            float(val.first / val.second)
-        });
-    }
+    for (const auto& [key, val] : global_sums)
+        result.push_back({smKeyStation(key), smKeyMonth(key), float(val.first / val.second)});
     return result;
 }
 
@@ -215,48 +221,39 @@ std::vector<MonthlyAvg> DataProcessor::computeMonthlyAverages() const {
 // ---------------------------------------------------------------------------
 
 std::vector<Fluctuation> DataProcessor::detectFluctuations() const {
-    using Key3 = uint64_t;
-    using Val   = std::pair<double, uint32_t>;
-
     // Step 1: per-(station, month, year) sums — thread-local + critical merge
-    std::unordered_map<Key3, Val> year_month_sums;
+    std::unordered_map<uint64_t, SumCount> year_sums;
 
     #pragma omp parallel
     {
-        std::unordered_map<Key3, Val> local;
+        std::unordered_map<uint64_t, SumCount> local;
 
         #pragma omp for nowait schedule(static)
         for (int i = 0; i < (int)measurements.size(); i++) {
             const auto& m = measurements[i];
-            Key3 key = ((Key3)m.station_id << 32) | ((Key3)m.month << 16) | m.year;
-            auto& [s, c] = local[key];
-            s += m.value;
-            c++;
+            auto& [sum, count] = local[smyKey(m.station_id, m.month, m.year)];
+            sum += m.value;
+            count++;
         }
 
         #pragma omp critical
-        for (auto& [k, v] : local) {
-            auto& [gs, gc] = year_month_sums[k];
-            gs += v.first;
-            gc += v.second;
+        for (auto& [key, val] : local) {
+            auto& [sum, count] = year_sums[key];
+            sum   += val.first;
+            count += val.second;
         }
     }
 
-    // Step 2: group by (station, month) -> sorted vector of (year, avg)
-    using Key2 = uint64_t;
-    std::unordered_map<Key2, std::vector<std::pair<uint16_t, float>>> station_month;
-
-    for (const auto& [key, val] : year_month_sums) {
-        uint32_t station_id = uint32_t(key >> 32);
-        uint8_t  month      = uint8_t((key >> 16) & 0xFF);
-        uint16_t year       = uint16_t(key & 0xFFFF);
-        Key2 k2 = ((Key2)station_id << 4) | (month - 1);
-        station_month[k2].emplace_back(year, float(val.first / val.second));
+    // Step 2: group by (station, month) -> vector of (year, avg_temp)
+    std::unordered_map<uint64_t, std::vector<std::pair<uint16_t, float>>> by_station_month;
+    for (const auto& [key, val] : year_sums) {
+        uint64_t sm = smKey(smyKeyStation(key), smyKeyMonth(key));
+        by_station_month[sm].emplace_back(smyKeyYear(key), float(val.first / val.second));
     }
 
     // Step 3: detect fluctuations per (station, month) — embarrassingly parallel
-    std::vector<std::pair<Key2, std::vector<std::pair<uint16_t, float>>>> items(
-        station_month.begin(), station_month.end());
+    std::vector<std::pair<uint64_t, std::vector<std::pair<uint16_t, float>>>> items(
+        by_station_month.begin(), by_station_month.end());
 
     int nthreads = omp_get_max_threads();
     std::vector<std::vector<Fluctuation>> thread_results(nthreads);
@@ -264,7 +261,7 @@ std::vector<Fluctuation> DataProcessor::detectFluctuations() const {
     #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int)items.size(); i++) {
         int tid = omp_get_thread_num();
-        auto& [k2, year_avgs] = items[i];
+        auto& [key, year_avgs] = items[i];
 
         std::sort(year_avgs.begin(), year_avgs.end());
         if (year_avgs.size() < 2) continue;
@@ -277,8 +274,8 @@ std::vector<Fluctuation> DataProcessor::detectFluctuations() const {
 
         float threshold = 0.75f * (max_t - min_t);
 
-        uint32_t station_id = uint32_t(k2 >> 4);
-        uint8_t  month      = uint8_t((k2 & 0xF) + 1);
+        uint32_t station_id = smKeyStation(key);
+        uint8_t  month      = smKeyMonth(key);
 
         for (size_t j = 1; j < year_avgs.size(); j++) {
             if (year_avgs[j].first != year_avgs[j - 1].first + 1) continue;

@@ -70,6 +70,8 @@ int main(int argc, char* argv[]) {
     auto fluctuations = dp.detectFluctuations();
     std::cout << "Fluctuations detected: " << fluctuations.size() << "\n";
 
+    std::filesystem::create_directories("out");
+
     // Write vykyvy.csv
     {
         std::ofstream csv("out/vykyvy.csv");
@@ -80,8 +82,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Generate SVGs (looks for mapa_cr.svg in the working directory)
-    std::filesystem::create_directories("out");
-    generateSVGs(dp.stations, monthly_avgs, global_min, global_max, "mapa_cr.svg", "out");
+    generateSVGs(dp.stations, monthly_avgs, global_min, global_max, "czmap.svg", "out");
     std::cout << "SVGs written (leden.svg ... prosinec.svg)\n";
 
     auto t1 = std::chrono::high_resolution_clock::now();
