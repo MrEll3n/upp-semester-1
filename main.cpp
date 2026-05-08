@@ -46,7 +46,6 @@ int main(int argc, char* argv[]) {
     }
 
     // Global min/max for colour scale — thread-local then merge
-    // (MSVC classic OpenMP doesn't support min/max reductions)
     int nthreads = omp_get_max_threads();
     std::vector<float> t_min(nthreads, dp.measurements[0].value);
     std::vector<float> t_max(nthreads, dp.measurements[0].value);

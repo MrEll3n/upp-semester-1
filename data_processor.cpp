@@ -7,10 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-// ---------------------------------------------------------------------------
 // Parsing
-// ---------------------------------------------------------------------------
-
 bool DataProcessor::parseStations(std::vector<Station>& stations, const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) return false;
@@ -67,7 +64,6 @@ bool DataProcessor::parseMeasurements(std::vector<Measurement>& measurements, co
     if (p < end) p++;
 
     // collect line starts — separating discovery from parsing makes the parse
-    // loop below trivially parallelizable with "#pragma omp parallel for"
     std::vector<char*> lines;
     lines.reserve(size / 18);
     while (p < end) {
@@ -99,13 +95,10 @@ bool DataProcessor::parseData(const std::string& stations_path, const std::strin
     return true;
 }
 
-// ---------------------------------------------------------------------------
 // Filtering
-// ---------------------------------------------------------------------------
-
 void DataProcessor::filterStations() {
     struct StationStats {
-        std::vector<uint16_t> years;  // may have duplicates, sorted+unique at end
+        std::vector<uint16_t> years;
         uint32_t count = 0;
     };
 
@@ -181,10 +174,7 @@ static uint16_t smyKeyYear   (uint64_t key) { return uint16_t(key & 0xFFFF); }
 
 using SumCount = std::pair<double, uint32_t>;
 
-// ---------------------------------------------------------------------------
 // Monthly averages (for SVG coloring)
-// ---------------------------------------------------------------------------
-
 std::vector<MonthlyAvg> DataProcessor::computeMonthlyAverages() const {
     std::unordered_map<uint64_t, SumCount> global_sums;
 
@@ -216,12 +206,9 @@ std::vector<MonthlyAvg> DataProcessor::computeMonthlyAverages() const {
     return result;
 }
 
-// ---------------------------------------------------------------------------
 // Fluctuation detection
-// ---------------------------------------------------------------------------
-
 std::vector<Fluctuation> DataProcessor::detectFluctuations() const {
-    // Step 1: per-(station, month, year) sums — thread-local + critical merge
+    // Step 1: per-(station, month, year) sums
     std::unordered_map<uint64_t, SumCount> year_sums;
 
     #pragma omp parallel

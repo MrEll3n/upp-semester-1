@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
-#include <iostream>
 #include <omp.h>
 #include <sstream>
 #include <unordered_map>
@@ -75,9 +74,7 @@ void generateSVGs(
         std::ifstream f(base_map_path);
         if (f.is_open()) {
             base_map.assign(std::istreambuf_iterator<char>(f), {});
-            std::cout << "Base map loaded: " << base_map_path << "\n";
         } else {
-            std::cerr << "WARNING: could not open base map '" << base_map_path << "', using fallback\n";
             base_map = "<svg xmlns=\"http://www.w3.org/2000/svg\" "
                        "width=\"800\" height=\"517\"></svg>";
         }
